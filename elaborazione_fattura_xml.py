@@ -45,7 +45,7 @@ def riassumi_descrizione(descrizione_query):
     response = chain.invoke({"query": descrizione_query})
     
     # Estrai solo il contenuto del testo dalla risposta, che è un oggetto AIMessage
-    descrizione_riassunta = response.content.strip()  # Accedi al campo `content` dell'oggetto AIMessage
+    descrizione_riassunta = response.content.strip()  # Accedi al campo content dell'oggetto AIMessage
     
     return descrizione_riassunta
 
@@ -75,7 +75,7 @@ def parse_xml_file(xml_file_path, includi_dettaglio_linee=True):
     for riepilogo in riepiloghi:
         parse_element(riepilogo, riepilogo_dati)
 
-    # Parsing delle linee solo se `includi_dettaglio_linee` è True
+    # Parsing delle linee solo se includi_dettaglio_linee è True
     line_items = []
     descrizioni = []
     lines = root.findall(".//FatturaElettronicaBody//DettaglioLinee")
@@ -93,14 +93,14 @@ def parse_xml_file(xml_file_path, includi_dettaglio_linee=True):
     # Combina i dati generali e di riepilogo in una singola riga
     combined_data = {**header_data, **general_data, **riepilogo_dati}
 
-    # Se `includi_dettaglio_linee` è False, combina le descrizioni in un'unica stringa e riassumila
+    # Se includi_dettaglio_linee è False, combina le descrizioni in un'unica stringa e riassumila
     if not includi_dettaglio_linee and descrizioni:
         descrizione_completa = " | ".join(descrizioni)
         descrizione_riassunta = riassumi_descrizione(descrizione_completa)
         combined_data["Descrizione"] = descrizione_riassunta
         all_data.append(combined_data)
     elif line_items:
-        # Se `includi_dettaglio_linee` è True, aggiungi la prima linea del dettaglio
+        # Se includi_dettaglio_linee è True, aggiungi la prima linea del dettaglio
         first_line_data = line_items[0]
         combined_data = {**combined_data, **first_line_data}
         all_data.append(combined_data)
@@ -142,14 +142,14 @@ def seleziona_colonne(df, colonne_default):
         st.write(f"- {col}")
     
     # Chiedi se vuoi usare le colonne di default o visualizzare tutte
-    scelta = st.radio("Vuoi visualizzare tutte le colonne o usare quelle di default?", ['tutte', 'default'])
+    scelta = st.radio("Vuoi visualizzare tutte le colonne o usare quelle di default?", ["Tutte", "Default"])
     
-    if scelta == "tutte":
+    if scelta == "Tutte":
         st.write("Le seguenti colonne sono disponibili nel file XML:")
         for col in df.columns:
             st.write(f"- {col}")
-        colonne_selezionate = st.text_input("Inserisci le colonne da visualizzare, separate da virgola:")
-        colonne_selezionate = [col.strip() for col in colonne_selezionate.split(',')]
+        colonne_selezionate = st.text_input("Inserisci le colonne da visualizzare, separate da virgola").split(',')
+        colonne_selezionate = [col.strip() for col in colonne_selezionate]
         
         # Verifica se tutte le colonne selezionate esistono nel DataFrame
         colonne_valide = [col for col in colonne_selezionate if col in df.columns]
@@ -160,23 +160,31 @@ def seleziona_colonne(df, colonne_default):
     else:
         return colonne_default
 
-# Streamlit UI
-st.title("Elaborazione Fattura XML")
+# Inizializza Streamlit
+st.title("Elaborazione XML e Estrazione Dati")
 
-# Caricamento dei file XML
-uploaded_files = st.file_uploader("Carica i file XML", type="xml", accept_multiple_files=True)
+# Carica la cartella XML (o usa una cartella predefinita)
+xml_folder_path = st.text_input("Inserisci il percorso della cartella contenente i file XML", "")
 
-if uploaded_files:
-    st.write(f"Caricati {len(uploaded_files)} file XML")
+# Chiedi se includere o meno il dettaglio delle linee
+includi_dettaglio_linee = st.radio("Vuoi includere il dettaglio delle linee?", ["Sì", "No"]) == "Sì"
 
-    # Chiede all'utente se includere o meno il dettaglio delle linee
-    includi_dettaglio_linee = st.radio("Vuoi includere il dettaglio delle linee?", ["sì", "no"]) == "sì"
+# Esegui il parsing dei file e crea il DataFrame
+if xml_folder_path:
+    all_data_df = process_all_files(xml_folder_path, includi_dettaglio_linee)
+    
+    # Mostra il DataFrame in Streamlit
+    st.write("Dati estratti:", all_data_df)
 
-    # Esegui il parsing e crea il DataFrame
-    all_data_df = process_all_files(uploaded_files, includi_dettaglio_linee)
-
-    # Seleziona le colonne da visualizzare
+    # Seleziona le colonne da esportare
     colonne_da_esportare = seleziona_colonne(all_data_df, colonne_default)
 
+    # Esportazione in Excel
     if colonne_da_esportare:
-       	 # Esportazione
+        colonne_esistenti = [col for col in colonne_da_esportare if col in all_data_df.columns]
+        if colonne_esistenti:
+            output_path = 'fattura_dati_combinati_selezionati.xlsx'
+            all_data_df[colonne_esistenti].to_excel(output_path, index=False)
+            st.download_button("Scarica il file Excel", data=open(output_path, "rb"), file_name=output_path)
+        else:
+            st.warning("Nessuna delle colonne selezionate esiste nel DataFrame per l'esportazione.")
