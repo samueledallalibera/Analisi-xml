@@ -179,4 +179,4 @@ if uploaded_files:
     colonne_da_esportare = seleziona_colonne(all_data_df, colonne_default)
 
     if colonne_da_esportare:
-        # Esportazione
+       	 # Esportazione
