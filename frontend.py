@@ -20,8 +20,8 @@ def parse_element(element, parsed_data, parent_tag=""):
             parsed_data[tag_name] = child.text
 
 # Funzione per estrarre e parsare il file XML
-def parse_xml_file(xml_file_path, includi_dettaglio_linee=True):
-    tree = ET.parse(xml_file_path)
+def parse_xml_file(xml_file, includi_dettaglio_linee=True):
+    tree = ET.parse(xml_file)
     root = tree.getroot()
 
     # Estrazione del namespace
@@ -101,7 +101,7 @@ def process_all_files(file_input, includi_dettaglio_linee=True):
             with zip_ref.open(xml_filename) as xml_file:
                 st.write(f"Elaborando il file: {xml_filename}")
                 try:
-                    file_data = parse_xml_file(xml_file, includi_dettaglio_linee)
+                    file_data = parse_xml_file(BytesIO(xml_file.read()), includi_dettaglio_linee)
                     all_data_combined.extend(file_data)
                 except ET.ParseError as e:
                     gestisci_errore_parsing(xml_filename, e)
@@ -187,19 +187,12 @@ if uploaded_file:
         # Selezione delle colonne da esportare
         colonne_da_esportare = seleziona_colonne(all_data_df, colonne_default)
 
-        # Esportazione in un file Excel solo con le colonne selezionate, se esistono nel DataFrame
+        # Esportazione dei dati selezionati
         if colonne_da_esportare:
-            # Filtra solo le colonne che esistono nel DataFrame
-            colonne_esistenti = [col for col in colonne_da_esportare if col in all_data_df.columns]
-            
-            if colonne_esistenti:
-                # Aggiungi la funzione di download
-                download_link(all_data_df[colonne_esistenti], 'fattura_dati_combinati_selezionati.xlsx')
-                st.success(f"Tutti i dati selezionati sono pronti per essere scaricati.")
-            else:
-                st.warning("Nessuna delle colonne selezionate esiste nel DataFrame per l'esportazione.")
+            all_data_df_selezionati = all_data_df[colonne_da_esportare]
+            download_link(all_data_df_selezionati, "fattura_dati_combinati_selezionati.xlsx")
+            st.success(f"Tutti i dati selezionati sono pronti per essere scaricati.")
         else:
             st.warning("Nessuna colonna è stata selezionata per l'esportazione.")
     else:
         st.warning("Non sono stati trovati dati nei file XML.")
-
