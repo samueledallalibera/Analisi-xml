@@ -171,10 +171,14 @@ colonne_default = [
 # Interfaccia utente con Streamlit
 st.title("Analisi XML Fatture Elettroniche")
 
-# Seleziona il file ZIP contenente i file XML
-uploaded_file = st.file_uploader("Carica il file ZIP contenente i file XML", type=["zip"])
+# Carica un nuovo file ZIP per l'elaborazione
+uploaded_file = st.file_uploader("Carica il file ZIP contenente i file XML", type=["zip"], key="file_uploader")
 
+# Reset dei dati quando viene caricato un nuovo file
 if uploaded_file is not None:
+    # Reset dei dati precedenti
+    all_data_df = None
+
     # Estrazione file ZIP
     extracted_folder = extract_zip(uploaded_file)
 
