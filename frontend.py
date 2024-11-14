@@ -117,6 +117,27 @@ def process_all_files(xml_folder_path, includi_dettaglio_linee=True):
     all_data_df = pd.DataFrame(all_data_combined)
     return all_data_df
 
+# Dizionario per rinominare le colonne
+colonne_renamed = {
+    "CedentePrestatore/DatiAnagrafici/IdFiscaleIVA/IdPaese": "Nazione",
+    "CedentePrestatore/DatiAnagrafici/IdFiscaleIVA/IdCodice": "P. IVA",
+    "CedentePrestatore/DatiAnagrafici/Anagrafica/Denominazione": "Ragione sociale",
+    "CedentePrestatore/DatiAnagrafici/RegimeFiscale": "Regime fiscale",
+    "CedentePrestatore/Sede/Indirizzo": "Indirizzo",
+    "CedentePrestatore/Sede/NumeroCivico": "Civico",
+    "CedentePrestatore/Sede/CAP": "CAP",
+    "CedentePrestatore/Sede/Comune": "Comune",
+    "TipoDocumento": "Tipo documento",
+    "Data": "Data",
+    "Numero": "Numero",
+    "ImportoTotaleDocumento": "Totale",
+    "AliquotaIVA": "%IVA",
+    "ImponibileImporto": "Imponibile",
+    "Imposta": "IVA",
+    "Descrizione": "Descrizione",
+    "PrezzoTotale": "Prezzo Totale"
+}
+
 # Funzione per selezionare le colonne da esportare
 def seleziona_colonne(df, colonne_default):
     colonne_validi = [col for col in colonne_default if col in df.columns]
