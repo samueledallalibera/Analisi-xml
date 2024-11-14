@@ -2,6 +2,8 @@ import os
 import xml.etree.ElementTree as ET
 import pandas as pd
 import streamlit as st
+import zipfile
+from io import BytesIO
 
 # Funzione gestione errori
 def gestisci_errore_parsing(filename, errore):
@@ -81,21 +83,39 @@ def parse_xml_file(xml_file_path, includi_dettaglio_linee=True):
 
     return all_data
 
+# Funzione per estrarre file XML da un archivio ZIP
+def extract_xml_from_zip(zip_file):
+    with zipfile.ZipFile(zip_file, 'r') as zip_ref:
+        xml_files = [f for f in zip_ref.namelist() if f.endswith('.xml')]
+        return zip_ref, xml_files
+
 # Funzione per iterare su più file e compilare un unico DataFrame
-def process_all_files(xml_folder_path, includi_dettaglio_linee=True):
+def process_all_files(file_input, includi_dettaglio_linee=True):
     all_data_combined = []
 
-    # Ciclo su tutti i file nella cartella specificata
-    for filename in os.listdir(xml_folder_path):
-        if filename.endswith('.xml'):
-            xml_file_path = os.path.join(xml_folder_path, filename)
-            st.write(f"Elaborando il file: {filename}")
-            try:
-                # Parse del file XML e aggiunta dei dati raccolti alla lista principale
-                file_data = parse_xml_file(xml_file_path, includi_dettaglio_linee)
-                all_data_combined.extend(file_data)
-            except ET.ParseError as e:
-                gestisci_errore_parsing(filename, e)  # Chiamata alla funzione di gestione errori
+    # Controlla se è un file ZIP o una cartella
+    if zipfile.is_zipfile(file_input):
+        # Se è un file ZIP, estrai i file XML
+        zip_ref, xml_files = extract_xml_from_zip(file_input)
+        for xml_filename in xml_files:
+            with zip_ref.open(xml_filename) as xml_file:
+                st.write(f"Elaborando il file: {xml_filename}")
+                try:
+                    file_data = parse_xml_file(xml_file, includi_dettaglio_linee)
+                    all_data_combined.extend(file_data)
+                except ET.ParseError as e:
+                    gestisci_errore_parsing(xml_filename, e)
+    else:
+        # Se è una cartella di file, elenca i file XML
+        for filename in os.listdir(file_input):
+            if filename.endswith('.xml'):
+                xml_file_path = os.path.join(file_input, filename)
+                st.write(f"Elaborando il file: {filename}")
+                try:
+                    file_data = parse_xml_file(xml_file_path, includi_dettaglio_linee)
+                    all_data_combined.extend(file_data)
+                except ET.ParseError as e:
+                    gestisci_errore_parsing(filename, e)
 
     # Creazione del DataFrame combinato con tutti i dati
     all_data_df = pd.DataFrame(all_data_combined)
@@ -150,8 +170,8 @@ colonne_default = [
 # Interfaccia utente con Streamlit
 st.title("Analisi XML Fatture Elettroniche")
 
-# Seleziona la cartella dei file XML
-xml_folder_path = st.text_input("Inserisci il percorso della cartella contenente i file XML:", "")
+# Carica file ZIP o cartella di file XML
+uploaded_file = st.file_uploader("Carica un file ZIP o XML (singolo o multiplo)", type=["zip", "xml"])
 
 # Chiede all'utente se includere o meno il dettaglio delle linee
 includi_dettaglio_linee = st.radio(
@@ -159,9 +179,9 @@ includi_dettaglio_linee = st.radio(
     ("Sì", "No")
 ) == "Sì"
 
-# Verifica se la cartella è stata fornita
-if xml_folder_path:
-    all_data_df = process_all_files(xml_folder_path, includi_dettaglio_linee)
+# Verifica se un file è stato caricato
+if uploaded_file:
+    all_data_df = process_all_files(uploaded_file, includi_dettaglio_linee)
 
     if not all_data_df.empty:
         # Selezione delle colonne da esportare
