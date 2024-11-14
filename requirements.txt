@@ -74,7 +74,6 @@ python-magic==0.4.27
 python-multipart==0.0.17
 python-oxmsg==0.0.1
 python-pptx==1.0.2
-pywin32==305.1
 RapidFuzz==3.10.1
 rsa==4.9
 safetensors==0.4.5
