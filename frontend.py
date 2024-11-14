@@ -174,6 +174,9 @@ st.title("Analisi XML Fatture Elettroniche")
 # Carica un nuovo file ZIP per l'elaborazione
 uploaded_file = st.file_uploader("Carica il file ZIP contenente i file XML", type=["zip"], key="file_uploader")
 
+# Variabile per memorizzare i dati
+all_data_df = None
+
 # Reset dei dati quando viene caricato un nuovo file
 if uploaded_file is not None:
     # Reset dei dati precedenti
@@ -197,12 +200,7 @@ if uploaded_file is not None:
 
         if colonne_da_esportare:
             colonne_esistenti = [col for col in colonne_da_esportare if col in all_data_df.columns]
-            
-            if colonne_esistenti:
-                # Esportazione dei dati come file Excel
-                esporta_excel(all_data_df, colonne_esistenti)
-            else:
-                st.warning("Nessuna delle colonne selezionate esiste nel DataFrame per l'esportazione.")
+            esporta_excel(all_data_df, colonne_esistenti)
         else:
             st.warning("Nessuna colonna è stata selezionata per l'esportazione.")
     else:
