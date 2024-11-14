@@ -2,6 +2,8 @@ import os
 import xml.etree.ElementTree as ET
 import pandas as pd
 import streamlit as st
+import zipfile
+import io
 
 # Funzione gestione errori
 def gestisci_errore_parsing(filename, errore):
@@ -113,6 +115,18 @@ def seleziona_colonne(df, colonne_default):
     )
     return colonne_selezionate
 
+# Funzione per estrarre file ZIP
+def extract_zip(uploaded_file):
+    # Crea una cartella temporanea per estrarre il contenuto
+    temp_dir = "/tmp/unzipped"
+    os.makedirs(temp_dir, exist_ok=True)
+
+    # Estrai il contenuto del file ZIP
+    with zipfile.ZipFile(uploaded_file, 'r') as zip_ref:
+        zip_ref.extractall(temp_dir)
+
+    return temp_dir
+
 # Elenco delle colonne di default
 colonne_default = [
     "CedentePrestatore/DatiAnagrafici/IdFiscaleIVA/IdPaese",
@@ -137,8 +151,8 @@ colonne_default = [
 # Interfaccia utente con Streamlit
 st.title("Analisi XML Fatture Elettroniche")
 
-# Seleziona la cartella dei file XML
-xml_folder_path = st.text_input("Inserisci il percorso della cartella contenente i file XML:", "")
+# Seleziona il file ZIP contenente i file XML
+uploaded_file = st.file_uploader("Carica una cartella compressa (.zip)", type="zip")
 
 # Chiede all'utente se includere o meno il dettaglio delle linee
 includi_dettaglio_linee = st.radio(
@@ -146,9 +160,19 @@ includi_dettaglio_linee = st.radio(
     ("Sì", "No")
 ) == "Sì"
 
-# Verifica se la cartella è stata fornita
-if xml_folder_path:
-    all_data_df = process_all_files(xml_folder_path, includi_dettaglio_linee)
+if uploaded_file:
+    # Estrai il contenuto del file ZIP
+    extracted_folder = extract_zip(uploaded_file)
+
+    # Elenco dei file XML estratti
+    st.write(f"File estratti dalla cartella ZIP:")
+    for root, dirs, files in os.walk(extracted_folder):
+        for file in files:
+            if file.endswith('.xml'):
+                st.write(file)
+
+    # Processa i file XML estratti
+    all_data_df = process_all_files(extracted_folder, includi_dettaglio_linee)
 
     if not all_data_df.empty:
         # Selezione delle colonne da esportare
@@ -169,4 +193,3 @@ if xml_folder_path:
             st.warning("Nessuna colonna è stata selezionata per l'esportazione.")
     else:
         st.warning("Non sono stati trovati dati nei file XML.")
-
