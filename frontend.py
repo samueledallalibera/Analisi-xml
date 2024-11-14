@@ -98,9 +98,11 @@ def process_all_files(file_input, includi_dettaglio_linee=True):
         # Se è un file ZIP, estrai i file XML
         zip_ref, xml_files = extract_xml_from_zip(file_input)
         for xml_filename in xml_files:
+            # Leggi i file XML all'interno del file ZIP
             with zip_ref.open(xml_filename) as xml_file:
                 st.write(f"Elaborando il file: {xml_filename}")
                 try:
+                    # Usa BytesIO per leggere il contenuto
                     file_data = parse_xml_file(BytesIO(xml_file.read()), includi_dettaglio_linee)
                     all_data_combined.extend(file_data)
                 except ET.ParseError as e:
@@ -184,10 +186,10 @@ if uploaded_file:
     all_data_df = process_all_files(uploaded_file, includi_dettaglio_linee)
 
     if not all_data_df.empty:
-        # Selezione delle colonne da esportare
+        # Seleziona le colonne da esportare
         colonne_da_esportare = seleziona_colonne(all_data_df, colonne_default)
 
-        # Esportazione dei dati selezionati
+        # Esporta i dati
         if colonne_da_esportare:
             all_data_df_selezionati = all_data_df[colonne_da_esportare]
             download_link(all_data_df_selezionati, "fattura_dati_combinati_selezionati.xlsx")
