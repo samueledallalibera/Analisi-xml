@@ -152,6 +152,9 @@ def seleziona_colonne(df, colonne_default):
 # Funzione per esportare i dati come file Excel e creare un bottone di download
 def esporta_excel(df, colonne_esistenti):
     if not df.empty:
+        # Rinominare le colonne
+        df.rename(columns=colonne_renamed, inplace=True)
+
         # Creazione di un buffer in memoria (senza salvarlo su disco)
         output = io.BytesIO()
         
@@ -171,33 +174,6 @@ def esporta_excel(df, colonne_esistenti):
         st.success(f"Il file Excel è pronto per il download.")
     else:
         st.warning("Non ci sono dati da esportare.")
-
-# Elenco delle colonne di default
-colonne_default = [
-    "CedentePrestatore/DatiAnagrafici/IdFiscaleIVA/IdPaese",
-    "CedentePrestatore/DatiAnagrafici/IdFiscaleIVA/IdCodice",
-    "CedentePrestatore/DatiAnagrafici/Anagrafica/Denominazione",
-    "CedentePrestatore/DatiAnagrafici/RegimeFiscale",
-    "CedentePrestatore/Sede/Indirizzo",
-    "CedentePrestatore/Sede/NumeroCivico",
-    "CedentePrestatore/Sede/CAP",
-    "CedentePrestatore/Sede/Comune",
-    "TipoDocumento",
-    "Data",
-    "Numero",
-    "ImportoTotaleDocumento",
-    "AliquotaIVA",
-    "ImponibileImporto",
-    "Imposta",
-    "Descrizione",
-    "PrezzoTotale"
-]
-
-# Interfaccia utente con Streamlit
-st.title("Analisi XML Fatture Elettroniche")
-
-# Carica un nuovo file ZIP per l'elaborazione
-uploaded_file = st.file_uploader("Carica il file ZIP contenente i file XML", type=["zip"], key="file_uploader")
 
 # Variabile per memorizzare i dati
 all_data_df = None
@@ -220,6 +196,9 @@ if uploaded_file is not None:
     all_data_df = process_all_files(extracted_folder, includi_dettaglio_linee)
 
     if not all_data_df.empty:
+        # Rinominare le colonne prima di qualsiasi elaborazione
+        all_data_df.rename(columns=colonne_renamed, inplace=True)
+        
         # Selezione delle colonne da esportare
         colonne_da_esportare = seleziona_colonne(all_data_df, colonne_default)
 
