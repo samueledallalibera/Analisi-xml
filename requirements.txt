@@ -26,11 +26,6 @@ jiter==0.7.0
 jsonpath-python==1.0.6
 jsonpointer==2.1
 langchain==0.3.7
-langchain-community==0.3.5
-langchain-core==0.3.15
-langchain-openai==0.2.6
-langchain-text-splitters==0.3.2
-langchain-unstructured==0.1.5
 langdetect==1.0.9
 langsmith==0.1.140
 layoutparser==0.3.4
@@ -42,7 +37,7 @@ mkl-service==2.4.0
 olefile==0.47
 omegaconf==2.3.0
 onnx==1.17.0
-onnxruntime==1.20.0
+onnxruntime==1.19.2
 openai==1.54.3
 opencv-python==4.10.0.84
 orderly-set==5.2.2
@@ -82,14 +77,11 @@ sympy==1.13.1
 tiktoken==0.8.0
 timm==1.0.11
 tokenizers==0.20.3
-torch==2.5.1
+torch==2.0.1
 torchvision==0.20.1
-transformers==4.46.2
+transformers==4.30.2
 typing-inspect==0.9.0
 unstructured==0.15.14
-unstructured-client==0.25.9
-unstructured-inference==0.7.36
-unstructured.pytesseract==0.3.13
 wheel==0.44.0
 xlrd==2.0.1
 XlsxWriter==3.2.0
