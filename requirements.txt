@@ -37,8 +37,8 @@ layoutparser==0.3.4
 llava==0.0.1.dev0
 lxml==5.2.1
 marshmallow==3.23.1
-matplotlib==3.9.2
-mkl-service==2.4.0
+matplotlib==3.10
+mkl-service==2.4.2
 olefile==0.47
 omegaconf==2.3.0
 onnx==1.17.0
