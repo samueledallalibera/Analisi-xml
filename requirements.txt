@@ -73,6 +73,7 @@ RapidFuzz==3.10.1
 rsa==4.9
 safetensors==0.4.5
 setuptools==75.1.0
+streamlit==1.40.1
 sympy==1.13.1
 tiktoken==0.8.0
 timm==1.0.11
