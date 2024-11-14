@@ -4,6 +4,7 @@ import pandas as pd
 import streamlit as st
 import zipfile
 import io
+import shutil
 
 # Funzione gestione errori
 def gestisci_errore_parsing(filename, errore):
@@ -22,6 +23,12 @@ def parse_element(element, parsed_data, parent_tag=""):
 # Funzione per estrarre il contenuto di un file ZIP
 def extract_zip(zip_file):
     extracted_folder = "/tmp/extracted"  # Percorso temporaneo per i file estratti
+
+    # Rimuovi la cartella estratta precedente, se esiste
+    if os.path.exists(extracted_folder):
+        shutil.rmtree(extracted_folder)
+    
+    # Estrai il nuovo file ZIP
     with zipfile.ZipFile(zip_file, 'r') as zip_ref:
         zip_ref.extractall(extracted_folder)
     return extracted_folder
@@ -31,9 +38,6 @@ def parse_xml_file(xml_file_path, includi_dettaglio_linee=True):
     try:
         tree = ET.parse(xml_file_path)
         root = tree.getroot()
-
-        # Verifica il namespace e il tag root
-        namespace = root.tag.split("}")[0].strip("{") if '}' in root.tag else ""
 
         # Parsing dei dati generali della fattura senza namespace
         header_data = {}
