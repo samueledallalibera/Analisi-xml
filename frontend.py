@@ -4,6 +4,7 @@ import pandas as pd
 import streamlit as st
 import zipfile
 import io
+import shutil
 
 # Funzione gestione errori
 def gestisci_errore_parsing(filename, errore):
@@ -22,6 +23,12 @@ def parse_element(element, parsed_data, parent_tag=""):
 # Funzione per estrarre il contenuto di un file ZIP
 def extract_zip(zip_file):
     extracted_folder = "/tmp/extracted"  # Percorso temporaneo per i file estratti
+
+    # Rimuovi la cartella estratta precedente, se esiste
+    if os.path.exists(extracted_folder):
+        shutil.rmtree(extracted_folder)
+    
+    # Estrai il nuovo file ZIP
     with zipfile.ZipFile(zip_file, 'r') as zip_ref:
         zip_ref.extractall(extracted_folder)
     return extracted_folder
@@ -31,9 +38,6 @@ def parse_xml_file(xml_file_path, includi_dettaglio_linee=True):
     try:
         tree = ET.parse(xml_file_path)
         root = tree.getroot()
-
-        # Verifica il namespace e il tag root
-        namespace = root.tag.split("}")[0].strip("{") if '}' in root.tag else ""
 
         # Parsing dei dati generali della fattura senza namespace
         header_data = {}
@@ -113,27 +117,6 @@ def process_all_files(xml_folder_path, includi_dettaglio_linee=True):
     all_data_df = pd.DataFrame(all_data_combined)
     return all_data_df
 
-# Dizionario per rinominare le colonne
-colonne_renamed = {
-    "CedentePrestatore/DatiAnagrafici/IdFiscaleIVA/IdPaese": "Nazione",
-    "CedentePrestatore/DatiAnagrafici/IdFiscaleIVA/IdCodice": "P. IVA",
-    "CedentePrestatore/DatiAnagrafici/Anagrafica/Denominazione": "Ragione sociale",
-    "CedentePrestatore/DatiAnagrafici/RegimeFiscale": "Regime fiscale",
-    "CedentePrestatore/Sede/Indirizzo": "Indirizzo",
-    "CedentePrestatore/Sede/NumeroCivico": "Civico",
-    "CedentePrestatore/Sede/CAP": "CAP",
-    "CedentePrestatore/Sede/Comune": "Comune",
-    "TipoDocumento": "Tipo documento",
-    "Data": "Data",
-    "Numero": "Numero",
-    "ImportoTotaleDocumento": "Totale",
-    "AliquotaIVA": "%IVA",
-    "ImponibileImporto": "Imponibile",
-    "Imposta": "IVA",
-    "Descrizione": "Descrizione",
-    "PrezzoTotale": "Prezzo Totale"
-}
-
 # Funzione per selezionare le colonne da esportare
 def seleziona_colonne(df, colonne_default):
     colonne_validi = [col for col in colonne_default if col in df.columns]
@@ -148,9 +131,6 @@ def seleziona_colonne(df, colonne_default):
 # Funzione per esportare i dati come file Excel e creare un bottone di download
 def esporta_excel(df, colonne_esistenti):
     if not df.empty:
-        # Rinominare le colonne
-        df.rename(columns=colonne_renamed, inplace=True)
-
         # Creazione di un buffer in memoria (senza salvarlo su disco)
         output = io.BytesIO()
         
@@ -196,4 +176,36 @@ colonne_default = [
 st.title("Analisi XML Fatture Elettroniche")
 
 # Carica un nuovo file ZIP per l'elaborazione
-uploaded_file = st.file_uploader("Carica il file ZIP contenente i file XML", type=["zip"], key="file_uploader
+uploaded_file = st.file_uploader("Carica il file ZIP contenente i file XML", type=["zip"], key="file_uploader")
+
+# Variabile per memorizzare i dati
+all_data_df = None
+
+# Reset dei dati quando viene caricato un nuovo file
+if uploaded_file is not None:
+    # Reset dei dati precedenti
+    all_data_df = None
+
+    # Estrazione file ZIP
+    extracted_folder = extract_zip(uploaded_file)
+
+    # Mostra l'opzione per includere il dettaglio delle linee
+    includi_dettaglio_linee = st.radio(
+        "Vuoi includere il dettaglio delle linee?",
+        ("Sì", "No")
+    ) == "Sì"
+
+    # Elabora i dati una volta che l'utente ha scelto l'opzione
+    all_data_df = process_all_files(extracted_folder, includi_dettaglio_linee)
+
+    if not all_data_df.empty:
+        # Selezione delle colonne da esportare
+        colonne_da_esportare = seleziona_colonne(all_data_df, colonne_default)
+
+        if colonne_da_esportare:
+            colonne_esistenti = [col for col in colonne_da_esportare if col in all_data_df.columns]
+            esporta_excel(all_data_df, colonne_esistenti)
+        else:
+            st.warning("Nessuna colonna è stata selezionata per l'esportazione.")
+    else:
+        st.warning("Non sono stati trovati dati da processare.")
