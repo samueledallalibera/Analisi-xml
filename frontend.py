@@ -26,12 +26,6 @@ def extract_zip(zip_file):
         zip_ref.extractall(extracted_folder)
     return extracted_folder
 
-# Funzione per visualizzare la struttura del file XML
-def print_xml_structure(xml_file_path):
-    with open(xml_file_path, 'r') as file:
-        content = file.read()
-        st.text(content[:1000])  # Mostra solo i primi 1000 caratteri per evitare troppi dati
-
 # Funzione per estrarre e parsare il file XML
 def parse_xml_file(xml_file_path, includi_dettaglio_linee=True):
     try:
@@ -39,25 +33,18 @@ def parse_xml_file(xml_file_path, includi_dettaglio_linee=True):
         root = tree.getroot()
 
         # Verifica il namespace e il tag root
-        st.write(f"Parsing file: {xml_file_path}")
-        st.write(f"Root tag: {root.tag}")
-
-        # Estrazione del namespace
         namespace = root.tag.split("}")[0].strip("{") if '}' in root.tag else ""
-        st.write(f"Namespace: {namespace}")
 
         # Parsing dei dati generali della fattura senza namespace
         header_data = {}
         header = root.find(".//FatturaElettronicaHeader")
         if header is not None:
-            st.write("Trovato header della fattura.")
             parse_element(header, header_data)
 
         # Parsing di Data e Numero della Fattura nel corpo
         general_data = {}
         dati_generali = root.find(".//FatturaElettronicaBody//DatiGenerali//DatiGeneraliDocumento")
         if dati_generali is not None:
-            st.write("Trovato dati generali della fattura.")
             parse_element(dati_generali, general_data)
 
         # Parsing dei riepiloghi
@@ -99,7 +86,6 @@ def parse_xml_file(xml_file_path, includi_dettaglio_linee=True):
         return all_data
 
     except ET.ParseError as e:
-        st.error(f"Errore durante il parsing del file {xml_file_path}: {e}")
         return []
 
 # Funzione per iterare su più file e compilare un unico DataFrame
@@ -112,13 +98,11 @@ def process_all_files(xml_folder_path, includi_dettaglio_linee=True):
         for file in files:
             if file.endswith('.xml'):
                 xml_files.append(os.path.join(root, file))
-                st.write(f"Trovato file XML: {file}")
 
     if not xml_files:
-        st.warning("Nessun file XML trovato nella cartella.")
+        return []
 
     for xml_file_path in xml_files:
-        st.write(f"Elaborando il file: {xml_file_path}")
         try:
             file_data = parse_xml_file(xml_file_path, includi_dettaglio_linee)
             all_data_combined.extend(file_data)
@@ -194,24 +178,13 @@ if uploaded_file is not None:
     # Estrazione file ZIP
     extracted_folder = extract_zip(uploaded_file)
 
-    # Elenco dei file XML estratti
-    st.write(f"File estratti dalla cartella ZIP:")
-    xml_files = []
-    for root, dirs, files in os.walk(extracted_folder):
-        for file in files:
-            if file.endswith('.xml'):
-                xml_files.append(os.path.join(root, file))
-                st.write(f"Trovato file XML: {file}")
-    
-    if not xml_files:
-        st.warning("Nessun file XML trovato nella cartella ZIP.")
-
-    # Chiede all'utente se includere o meno il dettaglio delle linee
+    # Mostra l'opzione per includere il dettaglio delle linee
     includi_dettaglio_linee = st.radio(
         "Vuoi includere il dettaglio delle linee?",
         ("Sì", "No")
     ) == "Sì"
 
+    # Elabora i dati una volta che l'utente ha scelto l'opzione
     all_data_df = process_all_files(extracted_folder, includi_dettaglio_linee)
 
     if not all_data_df.empty:
